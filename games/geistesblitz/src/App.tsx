@@ -181,6 +181,13 @@ export default function App() {
         return [...prev, { playerId: newPid, name: newName }];
       });
 
+      // If a non-host sees the host connect, re-announce so the host catches up
+      // (handles the race where non-host connected before the host did)
+      if (!isHost && newPid === roomInfoRef.current?.hostPlayerId) {
+        const me = roomInfoRef.current;
+        sendRef.current?.('all', 'PLAYER_CONNECTED', { playerId: me.playerId, playerName: me.playerName });
+      }
+
       if (isHost) {
         if (fullStateRef.current) {
           // Game already running — send current state to reconnecting player
