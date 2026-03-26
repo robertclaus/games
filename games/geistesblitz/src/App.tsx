@@ -43,7 +43,7 @@ export default function App() {
   const [wsUrl, setWsUrl] = useState<string | null>(() => {
     if (!initialRoom) return null;
     const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    return `${proto}//${window.location.host}/ws?roomId=${initialRoom.roomId}&playerId=${initialRoom.playerId}`;
+    return `${proto}//${window.location.host}/ws?roomId=${initialRoom.roomId}&playerId=${initialRoom.playerId}&playerName=${encodeURIComponent(initialRoom.playerName)}`;
   });
 
   const [waitingPlayers, setWaitingPlayers] = useState<WaitingPlayer[]>([]);
@@ -309,7 +309,7 @@ export default function App() {
     roomInfoRef.current = info;
     playerNamesRef.current[playerId] = playerName;
     const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const url = `${proto}//${window.location.host}/ws?roomId=${roomId}&playerId=${playerId}`;
+    const url = `${proto}//${window.location.host}/ws?roomId=${roomId}&playerId=${playerId}&playerName=${encodeURIComponent(playerName)}`;
     setWsUrl(url);
     setView('waiting');
   }, []);
