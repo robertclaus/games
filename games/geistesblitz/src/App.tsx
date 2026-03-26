@@ -48,6 +48,15 @@ export default function App() {
 
   const [waitingPlayers, setWaitingPlayers] = useState<WaitingPlayer[]>([]);
   const [publicState, setPublicState] = useState<PublicGameState | null>(null);
+  // When launched from the lobby, fetch expected player count so we can auto-start
+  const [expectedPlayerCount, setExpectedPlayerCount] = useState<number | null>(null);
+  useEffect(() => {
+    if (!initialRoom) return;
+    fetch(`/api/rooms/${initialRoom.roomId}`)
+      .then(r => r.json())
+      .then((data: { playerCount: number }) => setExpectedPlayerCount(data.playerCount))
+      .catch(() => setExpectedPlayerCount(null));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fullStateRef = useRef<FullGameState | null>(null);
   const playerNamesRef = useRef<Record<string, string>>(
@@ -271,6 +280,22 @@ export default function App() {
     return () => clearTimers();
   }, []);
 
+  // Auto-start when launched from lobby: once all expected players are connected
+  useEffect(() => {
+    if (!initialRoom?.isHost || expectedPlayerCount === null || fullStateRef.current) return;
+    if (waitingPlayers.length < expectedPlayerCount) return;
+    if (waitingPlayers.length < 1) return;
+    const playerIds = waitingPlayers.map(p => p.playerId);
+    const playerNames = { ...playerNamesRef.current };
+    const gameState = initGame(playerIds, playerNames);
+    fullStateRef.current = gameState;
+    const pub = getPublicState(gameState);
+    sendRef.current?.('all', 'PUBLIC_STATE', pub);
+    setPublicState(pub);
+    setView('game');
+    setupTimersForPhase(gameState);
+  }, [waitingPlayers, expectedPlayerCount]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Join Room ───────────────────────────────────────────────────────────────
   const handleJoinRoom = useCallback((
     roomId: string,
@@ -342,6 +367,29 @@ export default function App() {
   }
 
   if (view === 'waiting' && roomInfo) {
+    // Launched from the top-level lobby — skip manual start, show auto-launch screen
+    if (initialRoom) {
+      const needed = expectedPlayerCount ?? '?';
+      const connected = waitingPlayers.length;
+      return (
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0F172A' }}>
+          <div style={{ textAlign: 'center', color: '#E2E8F0' }}>
+            <div style={{ fontSize: '2rem', marginBottom: 16 }}>👻 Geistesblitz</div>
+            <div style={{ fontSize: '1rem', color: '#94A3B8', marginBottom: 8 }}>
+              Connecting players… {connected}/{needed}
+            </div>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+              {waitingPlayers.map(p => (
+                <div key={p.playerId} style={{ padding: '4px 12px', background: '#1E293B', borderRadius: 6, border: '1px solid #334155', fontSize: '0.9rem' }}>
+                  {p.name}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <WaitingRoom
         roomId={roomInfo.roomId}
