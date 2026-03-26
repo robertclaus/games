@@ -291,7 +291,7 @@ export default function App() {
   useEffect(() => {
     if (!initialRoom?.isHost || expectedPlayerCount === null || fullStateRef.current) return;
     if (waitingPlayers.length < expectedPlayerCount) return;
-    if (waitingPlayers.length < 1) return;
+    if (waitingPlayers.length < 2) return;
     const playerIds = waitingPlayers.map(p => p.playerId);
     const playerNames = { ...playerNamesRef.current };
     const gameState = initGame(playerIds, playerNames);
