@@ -1,0 +1,39 @@
+site_name: Board Games Platform
+site_description: Developer documentation for the multiplayer board games platform
+repo_url: https://github.com/your-org/games
+
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      primary: green
+      accent: light green
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - content.code.copy
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - admonition
+  - tables
+
+nav:
+  - Home: index.md
+  - Server: server.md
+  - Games:
+    - Overview: games/index.md
+    - Arboretum: games/arboretum.md
+    - Spyouts: games/spyouts.md
+    - Nerts: games/nerts.md
+    - Dead of Winter: games/dead-of-winter.md
+    - Otter: games/otter.md
+    - Geistesblitz: games/geistesblitz.md
+    - Paperback: games/paperback.md
+    - Word Slam: games/word-slam.md
+    - Blokus: games/blokus.md
+    - Telestrations: games/telestrations.md
