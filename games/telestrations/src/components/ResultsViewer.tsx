@@ -16,9 +16,10 @@ interface ResultsViewerProps {
   isHost: boolean;
   myPlayerId: string;
   onPlayAgain: () => void;
+  onGoHome?: () => void;
 }
 
-export function ResultsViewer({ booklets, players, isHost, myPlayerId, onPlayAgain }: ResultsViewerProps) {
+export function ResultsViewer({ booklets, players, isHost, myPlayerId, onPlayAgain, onGoHome }: ResultsViewerProps) {
   const [activeIdx, setActiveIdx] = useState(() => {
     // Start with the current player's booklet
     const myBookletIdx = booklets.findIndex(b => b.ownerPlayerId === myPlayerId);
@@ -57,6 +58,15 @@ export function ResultsViewer({ booklets, players, isHost, myPlayerId, onPlayAga
         )}
         {!isHost && (
           <span style={{ color: MUTED, fontSize: 13 }}>Waiting for host to start a new game…</span>
+        )}
+        {onGoHome && (
+          <button onClick={onGoHome} style={{
+            padding: '6px 16px', borderRadius: 6,
+            border: `1px solid ${BORDER}`, background: 'transparent',
+            color: MUTED, fontSize: 13, cursor: 'pointer',
+          }}>
+            🏠 Back to Lobby
+          </button>
         )}
       </div>
 

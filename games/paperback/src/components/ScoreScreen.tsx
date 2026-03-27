@@ -5,11 +5,12 @@ interface ScoreScreenProps {
   players: PublicPlayerState[];
   isHost: boolean;
   onPlayAgain: () => void;
+  onGoHome?: () => void;
 }
 
 const PLAYER_COLORS = ['#C5A028', '#4A90D9', '#E74C3C', '#27AE60'];
 
-export function ScoreScreen({ players, isHost, onPlayAgain }: ScoreScreenProps) {
+export function ScoreScreen({ players, isHost, onPlayAgain, onGoHome }: ScoreScreenProps) {
   // Sort by fame points descending; tiebreak by common cards gained
   const sorted = [...players].sort((a, b) => {
     if (b.famePoints !== a.famePoints) return b.famePoints - a.famePoints;
@@ -169,6 +170,15 @@ export function ScoreScreen({ players, isHost, onPlayAgain }: ScoreScreenProps) 
           <div style={{ color: '#8B6914', fontSize: 14 }}>
             Waiting for host to start a new game...
           </div>
+        )}
+        {onGoHome && (
+          <button onClick={onGoHome} style={{
+            padding: '10px 32px', borderRadius: 6,
+            border: '1px solid #8B6914', background: 'transparent',
+            color: '#8B6914', fontSize: '0.9rem', cursor: 'pointer',
+          }}>
+            🏠 Back to Lobby
+          </button>
         )}
       </div>
     </div>

@@ -15,9 +15,10 @@ interface ScoreScreenProps {
   isHost: boolean;
   myPlayerId: string;
   onPlayAgain: () => void;
+  onGoHome?: () => void;
 }
 
-export function ScoreScreen({ publicState, isHost, myPlayerId, onPlayAgain }: ScoreScreenProps) {
+export function ScoreScreen({ publicState, isHost, myPlayerId, onPlayAgain, onGoHome }: ScoreScreenProps) {
   const { teams } = publicState;
   const redScore  = teams.red.score;
   const blueScore = teams.blue.score;
@@ -111,6 +112,15 @@ export function ScoreScreen({ publicState, isHost, myPlayerId, onPlayAgain }: Sc
           <div style={{ color: MUTED, fontSize: 14 }}>
             Waiting for host to start a new game…
           </div>
+        )}
+        {onGoHome && (
+          <button onClick={onGoHome} style={{
+            padding: '11px 0', borderRadius: 8,
+            border: `1px solid ${BORDER}`, background: 'transparent',
+            color: MUTED, fontSize: 14, cursor: 'pointer',
+          }}>
+            🏠 Back to Lobby
+          </button>
         )}
       </div>
     </div>

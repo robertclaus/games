@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useWebSocket, WsMessage } from './hooks/useWebSocket';
 
 type LobbyView = 'home' | 'waiting';
@@ -49,6 +49,16 @@ function saveHistory(entry: HistoryEntry) {
   localStorage.setItem('gameHistory', JSON.stringify(updated));
 }
 
+function getUrlParams(): RoomInfo | null {
+  const p = new URLSearchParams(window.location.search);
+  const roomId = p.get('roomId');
+  const playerId = p.get('playerId');
+  const playerName = p.get('playerName');
+  const hostPlayerId = p.get('hostPlayerId');
+  if (!roomId || !playerId || !playerName || !hostPlayerId) return null;
+  return { roomId, playerId, playerName, isHost: playerId === hostPlayerId, hostPlayerId };
+}
+
 function launchGame(game: string, info: RoomInfo) {
   saveHistory({ date: new Date().toISOString(), roomId: info.roomId, game, playerName: info.playerName });
   const params = new URLSearchParams({
@@ -61,21 +71,31 @@ function launchGame(game: string, info: RoomInfo) {
 }
 
 export default function App() {
-  const [view, setView] = useState<LobbyView>('home');
-  const [playerName, setPlayerName] = useState(() => localStorage.getItem('playerName') ?? '');
+  const initialRoom = useMemo(getUrlParams, []);
+
+  const [view, setView] = useState<LobbyView>(initialRoom ? 'waiting' : 'home');
+  const [playerName, setPlayerName] = useState(() => initialRoom?.playerName ?? localStorage.getItem('playerName') ?? '');
   const [roomIdInput, setRoomIdInput] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [roomInfo, setRoomInfo] = useState<RoomInfo | null>(null);
-  const [wsUrl, setWsUrl] = useState<string | null>(null);
-  const [waitingPlayers, setWaitingPlayers] = useState<WaitingPlayer[]>([]);
+  const [roomInfo, setRoomInfo] = useState<RoomInfo | null>(initialRoom);
+  const [wsUrl, setWsUrl] = useState<string | null>(() => {
+    if (!initialRoom) return null;
+    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${proto}//${window.location.host}/ws?roomId=${initialRoom.roomId}&playerId=${initialRoom.playerId}`;
+  });
+  const [waitingPlayers, setWaitingPlayers] = useState<WaitingPlayer[]>(
+    initialRoom ? [{ playerId: initialRoom.playerId, name: initialRoom.playerName }] : []
+  );
   const [selectedGame, setSelectedGame] = useState<string | null>(null);
   const [history] = useState<HistoryEntry[]>(getHistory);
 
-  const roomInfoRef = useRef<RoomInfo | null>(null);
+  const roomInfoRef = useRef<RoomInfo | null>(initialRoom);
   useEffect(() => { roomInfoRef.current = roomInfo; }, [roomInfo]);
 
-  const playerNamesRef = useRef<Record<string, string>>({});
+  const playerNamesRef = useRef<Record<string, string>>(
+    initialRoom ? { [initialRoom.playerId]: initialRoom.playerName } : {}
+  );
 
   const sendRef = useRef<((to: string, type: string, payload: unknown) => void) | null>(null);
   function send(to: string, type: string, payload: unknown) {
@@ -96,6 +116,11 @@ export default function App() {
         if (existing) return existing.name !== newName ? prev.map(p => p.playerId === newPid ? { ...p, name: newName } : p) : prev;
         return [...prev, { playerId: newPid, name: newName }];
       });
+      // Re-announce fix: non-host re-announces when it sees the host connect
+      if (!isHost && newPid === roomInfoRef.current?.hostPlayerId) {
+        const info = roomInfoRef.current;
+        sendRef.current?.('all', 'PLAYER_CONNECTED', { playerId: info.playerId, playerName: info.playerName });
+      }
       if (isHost) {
         const roster = Object.entries(playerNamesRef.current).map(([pid, name]) => ({ playerId: pid, name }));
         send('all', 'PLAYER_LIST', { players: roster });

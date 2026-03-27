@@ -12,9 +12,10 @@ interface ScoreScreenProps {
   players: PlayerInfo[];
   isHost: boolean;
   onPlayAgain: () => void;
+  onGoHome?: () => void;
 }
 
-export function ScoreScreen({ winnerId, players, isHost, onPlayAgain }: ScoreScreenProps) {
+export function ScoreScreen({ winnerId, players, isHost, onPlayAgain, onGoHome }: ScoreScreenProps) {
   const winner = players.find(p => p.playerId === winnerId);
   const sorted = [...players].sort((a, b) => b.luckyStones - a.luckyStones);
 
@@ -72,6 +73,15 @@ export function ScoreScreen({ winnerId, players, isHost, onPlayAgain }: ScoreScr
           <p style={{ color: '#78909c', fontSize: '0.9rem', textAlign: 'center' }}>
             Waiting for host to start a new game...
           </p>
+        )}
+        {onGoHome && (
+          <button onClick={onGoHome} style={{
+            padding: '10px 40px', borderRadius: 8,
+            border: '1px solid #1a3a5c', background: 'transparent',
+            color: '#78909c', fontSize: '0.9rem', cursor: 'pointer',
+          }}>
+            🏠 Back to Lobby
+          </button>
         )}
       </div>
     </div>

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useWebSocket, WsMessage } from './hooks/useWebSocket';
 import { FullGameState, PublicGameState, GameAction } from './game/types';
 import {
@@ -33,10 +33,26 @@ interface WaitingPlayer {
 
 // ── App ────────────────────────────────────────────────────────────────────────
 
+function getUrlParams(): RoomInfo | null {
+  const p = new URLSearchParams(window.location.search);
+  const roomId = p.get('roomId');
+  const playerId = p.get('playerId');
+  const playerName = p.get('playerName');
+  const hostPlayerId = p.get('hostPlayerId');
+  if (!roomId || !playerId || !playerName || !hostPlayerId) return null;
+  return { roomId, playerId, playerName, isHost: playerId === hostPlayerId, hostPlayerId };
+}
+
 export default function App() {
-  const [view, setView] = useState<AppView>('lobby');
-  const [roomInfo, setRoomInfo] = useState<RoomInfo | null>(null);
-  const [wsUrl, setWsUrl] = useState<string | null>(null);
+  const initialRoom = useMemo(getUrlParams, []);
+
+  const [view, setView] = useState<AppView>(initialRoom ? 'waiting' : 'lobby');
+  const [roomInfo, setRoomInfo] = useState<RoomInfo | null>(initialRoom);
+  const [wsUrl, setWsUrl] = useState<string | null>(() => {
+    if (!initialRoom) return null;
+    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${proto}//${window.location.host}/ws?roomId=${initialRoom.roomId}&playerId=${initialRoom.playerId}&playerName=${encodeURIComponent(initialRoom.playerName)}`;
+  });
 
   const [waitingPlayers, setWaitingPlayers] = useState<WaitingPlayer[]>([]);
   const [publicState, setPublicState] = useState<PublicGameState | null>(null);
@@ -45,8 +61,10 @@ export default function App() {
   const [myAnswer, setMyAnswer] = useState<string | null>(null);
 
   const fullStateRef = useRef<FullGameState | null>(null);
-  const playerNamesRef = useRef<Record<string, string>>({});
-  const roomInfoRef = useRef<RoomInfo | null>(null);
+  const playerNamesRef = useRef<Record<string, string>>(
+    initialRoom ? { [initialRoom.playerId]: initialRoom.playerName } : {}
+  );
+  const roomInfoRef = useRef<RoomInfo | null>(initialRoom);
   const sendRef = useRef<((to: string, type: string, payload: unknown) => void) | null>(null);
 
   // Host-only timers
@@ -56,6 +74,15 @@ export default function App() {
   const RESULT_DISPLAY_MS = 4_000;
 
   useEffect(() => { roomInfoRef.current = roomInfo; }, [roomInfo]);
+
+  const [expectedPlayerCount, setExpectedPlayerCount] = useState<number | null>(null);
+  useEffect(() => {
+    if (!initialRoom) return;
+    fetch(`/api/rooms/${initialRoom.roomId}`)
+      .then(r => r.json())
+      .then((data: { playerCount: number }) => setExpectedPlayerCount(data.playerCount))
+      .catch(() => setExpectedPlayerCount(null));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Send helpers ────────────────────────────────────────────────────────────
 
@@ -183,6 +210,12 @@ export default function App() {
         return [...prev, { playerId: newPid, name: newName }];
       });
 
+      // Re-announce fix: non-host re-announces when it sees the host connect
+      if (!isHost && newPid === roomInfoRef.current?.hostPlayerId) {
+        const me = roomInfoRef.current;
+        sendRef.current?.('all', 'PLAYER_CONNECTED', { playerId: me.playerId, playerName: me.playerName });
+      }
+
       if (isHost) {
         if (fullStateRef.current) {
           // Game running — send current public state to reconnecting player
@@ -306,10 +339,26 @@ export default function App() {
     roomInfoRef.current = info;
     playerNamesRef.current[playerId] = playerName;
     const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const url = `${proto}//${window.location.host}/ws?roomId=${roomId}&playerId=${playerId}`;
+    const url = `${proto}//${window.location.host}/ws?roomId=${roomId}&playerId=${playerId}&playerName=${encodeURIComponent(playerName)}`;
     setWsUrl(url);
     setView('waiting');
   }, []);
+
+  // Auto-start when launched from lobby (word-slam requires 4 players)
+  useEffect(() => {
+    if (!initialRoom?.isHost || expectedPlayerCount === null || fullStateRef.current) return;
+    if (waitingPlayers.length < expectedPlayerCount) return;
+    if (waitingPlayers.length < 4) return;
+    const playerIds = waitingPlayers.map(p => p.playerId);
+    const playerNames = { ...playerNamesRef.current };
+    const gameState = initGame(playerIds, playerNames);
+    fullStateRef.current = gameState;
+    broadcastPublic(gameState);
+    setView('game');
+    sendRoundAnswers(gameState);
+    startRoundTimer();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [waitingPlayers, expectedPlayerCount]);
 
   // ── Start Game ──────────────────────────────────────────────────────────────
 
@@ -357,10 +406,38 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const handleGoHome = useCallback(() => {
+    const info = roomInfoRef.current;
+    if (!info) { window.location.href = '/lobby/'; return; }
+    const params = new URLSearchParams({ roomId: info.roomId, playerId: info.playerId, playerName: info.playerName, hostPlayerId: info.hostPlayerId });
+    window.location.href = `/lobby/?${params.toString()}`;
+  }, []);
+
   // ── Render ──────────────────────────────────────────────────────────────────
 
   if (view === 'lobby') {
     return <Lobby onJoin={handleJoinRoom} />;
+  }
+
+  if (view === 'waiting' && initialRoom) {
+    const needed = expectedPlayerCount ?? '?';
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0F172A' }}>
+        <div style={{ textAlign: 'center', color: '#E2E8F0' }}>
+          <div style={{ fontSize: '2rem', marginBottom: 16 }}>🗣️ Word Slam</div>
+          <div style={{ fontSize: '1rem', color: '#94A3B8', marginBottom: 8 }}>
+            Connecting players… {waitingPlayers.length}/{needed}
+          </div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+            {waitingPlayers.map(p => (
+              <div key={p.playerId} style={{ padding: '4px 12px', background: '#1E293B', borderRadius: 6, border: '1px solid #334155', fontSize: '0.9rem' }}>
+                {p.name}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (view === 'waiting' && roomInfo) {
@@ -371,6 +448,7 @@ export default function App() {
         isHost={roomInfo.isHost}
         myPlayerId={roomInfo.playerId}
         onStart={handleStartGame}
+        onGoHome={handleGoHome}
       />
     );
   }
@@ -382,6 +460,7 @@ export default function App() {
         isHost={roomInfo?.isHost ?? false}
         myPlayerId={roomInfo?.playerId ?? ''}
         onPlayAgain={handlePlayAgain}
+        onGoHome={handleGoHome}
       />
     );
   }

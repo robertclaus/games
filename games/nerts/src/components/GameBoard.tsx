@@ -34,6 +34,7 @@ interface GameBoardProps {
   onFlip: () => void;
   onNextRound: () => void;
   onPlayAgain: () => void;
+  onGoHome?: () => void;
 }
 
 export function GameBoard({
@@ -55,6 +56,7 @@ export function GameBoard({
   onFlip,
   onNextRound,
   onPlayAgain,
+  onGoHome,
 }: GameBoardProps) {
   // Selection state
   const [selection, setSelection] = React.useState<Selection>(null);
@@ -341,6 +343,7 @@ export function GameBoard({
           gameWinnerId={gameWinnerId}
           onNextRound={onNextRound}
           onPlayAgain={onPlayAgain}
+          onGoHome={onGoHome}
         />
       )}
     </div>

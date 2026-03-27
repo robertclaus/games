@@ -14,7 +14,7 @@ interface LobbyProps {
 
 export function Lobby({ onJoinRoom }: LobbyProps) {
   const [mode, setMode] = useState<'home' | 'create' | 'join'>('home');
-  const [playerName, setPlayerName] = useState('');
+  const [playerName, setPlayerName] = useState(() => localStorage.getItem('playerName') ?? '');
   const [roomId, setRoomId] = useState('');
   const [character, setCharacter] = useState<SpyCharacter>('Denis');
   const [error, setError] = useState('');
@@ -40,6 +40,7 @@ export function Lobby({ onJoinRoom }: LobbyProps) {
 
       const data = await res.json() as { roomId: string; hostPlayerId: string };
       setLoading(false);
+      localStorage.setItem('playerName', playerName.trim());
       onJoinRoom(data.roomId, data.hostPlayerId, playerName.trim(), true, data.hostPlayerId, character);
     } catch {
       setError('Could not connect to server');
@@ -74,6 +75,7 @@ export function Lobby({ onJoinRoom }: LobbyProps) {
         : { hostPlayerId: '' };
 
       setLoading(false);
+      localStorage.setItem('playerName', playerName.trim());
       onJoinRoom(roomCode, joinData.playerId, playerName.trim(), false, infoData.hostPlayerId, character);
     } catch {
       setError('Could not connect to server');

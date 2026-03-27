@@ -16,6 +16,7 @@ interface RoundResultsProps {
   gameWinnerId: string | null;
   onNextRound: () => void;
   onPlayAgain: () => void;
+  onGoHome?: () => void;
 }
 
 export function RoundResults({
@@ -27,6 +28,7 @@ export function RoundResults({
   playerNames,
   onNextRound,
   onPlayAgain,
+  onGoHome,
 }: RoundResultsProps) {
   const nertsCallerName = nertsCallerId ? (playerNames[nertsCallerId] ?? nertsCallerId) : null;
   const gameWinnerName = gameWinnerId ? (playerNames[gameWinnerId] ?? gameWinnerId) : null;
@@ -66,6 +68,9 @@ export function RoundResults({
               Waiting for host...
             </div>
           )}
+          <button style={{ width: '100%', padding: '10px', fontSize: 14, marginTop: 8, background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.6)', borderRadius: 6, cursor: 'pointer' }} onClick={onGoHome}>
+            Back to Lobby
+          </button>
         </div>
       </div>
     );

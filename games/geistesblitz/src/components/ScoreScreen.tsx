@@ -5,9 +5,10 @@ interface ScoreScreenProps {
   players: PlayerState[];
   isHost: boolean;
   onPlayAgain: () => void;
+  onGoHome?: () => void;
 }
 
-export function ScoreScreen({ players, isHost, onPlayAgain }: ScoreScreenProps) {
+export function ScoreScreen({ players, isHost, onPlayAgain, onGoHome }: ScoreScreenProps) {
   const sorted = [...players].sort((a, b) => b.score - a.score);
   const topScore = sorted[0]?.score ?? 0;
   const winners = sorted.filter(p => p.score === topScore);
@@ -48,6 +49,15 @@ export function ScoreScreen({ players, isHost, onPlayAgain }: ScoreScreenProps) 
           </button>
         ) : (
           <p style={styles.waiting}>Waiting for host to start a new game...</p>
+        )}
+        {onGoHome && (
+          <button onClick={onGoHome} style={{
+            padding: '10px', borderRadius: 6,
+            border: '1px solid #7c3aed', background: 'transparent',
+            color: '#a78bfa', fontSize: '0.9rem', cursor: 'pointer',
+          }}>
+            🏠 Back to Lobby
+          </button>
         )}
       </div>
     </div>

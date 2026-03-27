@@ -11,7 +11,7 @@ interface LobbyProps {
 }
 
 export function Lobby({ onJoin }: LobbyProps) {
-  const [playerName, setPlayerName] = useState('');
+  const [playerName, setPlayerName] = useState(() => localStorage.getItem('playerName') ?? '');
   const [roomIdInput, setRoomIdInput] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,6 +23,7 @@ export function Lobby({ onJoin }: LobbyProps) {
     try {
       const res = await fetch('/api/rooms', { method: 'POST' });
       const data = await res.json() as { roomId: string; hostPlayerId: string };
+      localStorage.setItem('playerName', playerName.trim());
       onJoin(data.roomId, playerName.trim(), true, data.hostPlayerId, data.hostPlayerId);
     } catch {
       setError('Failed to create room');
@@ -40,6 +41,7 @@ export function Lobby({ onJoin }: LobbyProps) {
       const res = await fetch(`/api/rooms/${roomIdInput.trim()}/join`, { method: 'POST' });
       if (!res.ok) { setError('Room not found'); setLoading(false); return; }
       const data = await res.json() as { playerId: string; hostPlayerId: string };
+      localStorage.setItem('playerName', playerName.trim());
       onJoin(roomIdInput.trim(), playerName.trim(), false, data.playerId, data.hostPlayerId);
     } catch {
       setError('Failed to join room');
@@ -86,9 +88,10 @@ interface WaitingRoomProps {
   isHost: boolean;
   myPlayerId: string;
   onStart: () => void;
+  onGoHome?: () => void;
 }
 
-export function WaitingRoom({ roomId, players, isHost, myPlayerId, onStart }: WaitingRoomProps) {
+export function WaitingRoom({ roomId, players, isHost, myPlayerId, onStart, onGoHome }: WaitingRoomProps) {
   const canStart = players.length >= 2 && players.length <= 4;
 
   return (
@@ -133,6 +136,11 @@ export function WaitingRoom({ roomId, players, isHost, myPlayerId, onStart }: Wa
           </button>
         ) : (
           <p style={styles.waiting}>Waiting for host to start the game...</p>
+        )}
+        {onGoHome && (
+          <button onClick={onGoHome} style={{ ...styles.btnSecondary, marginTop: 4, fontSize: '0.9rem' }}>
+            🏠 Back to Lobby
+          </button>
         )}
       </div>
     </div>

@@ -88,9 +88,10 @@ interface WaitingRoomProps {
   isHost: boolean;
   myPlayerId: string;
   onStart: () => void;
+  onGoHome?: () => void;
 }
 
-export function WaitingRoom({ roomId, players, isHost, myPlayerId, onStart }: WaitingRoomProps) {
+export function WaitingRoom({ roomId, players, isHost, myPlayerId, onStart, onGoHome }: WaitingRoomProps) {
   const canStart = players.length >= 1;
 
   return (
@@ -139,6 +140,11 @@ export function WaitingRoom({ roomId, players, isHost, myPlayerId, onStart }: Wa
           </button>
         ) : (
           <p style={styles.waiting}>Waiting for host to start the game...</p>
+        )}
+        {onGoHome && (
+          <button onClick={onGoHome} style={{ ...styles.btnSecondary, marginTop: 4, fontSize: '0.9rem' }}>
+            🏠 Back to Lobby
+          </button>
         )}
       </div>
     </div>

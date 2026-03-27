@@ -7,9 +7,10 @@ interface ScoreScreenProps {
   codes: Record<string, CodeCard>;
   vaults: Record<string, VaultSlot[]>;
   onPlayAgain: () => void;
+  onGoHome?: () => void;
 }
 
-export function ScoreScreen({ winnerId, players, codes, vaults, onPlayAgain }: ScoreScreenProps) {
+export function ScoreScreen({ winnerId, players, codes, vaults, onPlayAgain, onGoHome }: ScoreScreenProps) {
   const winner = players.find(p => p.playerId === winnerId);
 
   return (
@@ -113,6 +114,15 @@ export function ScoreScreen({ winnerId, players, codes, vaults, onPlayAgain }: S
         <button className="primary" style={{ padding: '14px 40px', fontSize: 16, letterSpacing: '0.5px' }} onClick={onPlayAgain}>
           Play Again
         </button>
+        {onGoHome && (
+          <button onClick={onGoHome} style={{
+            padding: '10px 40px', borderRadius: 8,
+            border: '1px solid var(--color-border)', background: 'transparent',
+            color: 'var(--color-text-muted)', fontSize: 14, cursor: 'pointer',
+          }}>
+            🏠 Back to Lobby
+          </button>
+        )}
       </div>
     </div>
   );

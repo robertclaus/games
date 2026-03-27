@@ -367,6 +367,14 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ── Go Home ─────────────────────────────────────────────────────────────────
+  const handleGoHome = useCallback(() => {
+    const info = roomInfoRef.current;
+    if (!info) { window.location.href = '/lobby/'; return; }
+    const params = new URLSearchParams({ roomId: info.roomId, playerId: info.playerId, playerName: info.playerName, hostPlayerId: info.hostPlayerId });
+    window.location.href = `/lobby/?${params.toString()}`;
+  }, []);
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   if (view === 'lobby') {
@@ -404,6 +412,7 @@ export default function App() {
         isHost={roomInfo.isHost}
         myPlayerId={roomInfo.playerId}
         onStart={handleStartGame}
+        onGoHome={handleGoHome}
       />
     );
   }
@@ -414,6 +423,7 @@ export default function App() {
         players={publicState.players}
         isHost={roomInfo?.isHost ?? false}
         onPlayAgain={handlePlayAgain}
+        onGoHome={handleGoHome}
       />
     );
   }

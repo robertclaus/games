@@ -22,7 +22,7 @@ interface LobbyProps {
 }
 
 export function Lobby({ onJoin }: LobbyProps) {
-  const [playerName, setPlayerName]   = useState('');
+  const [playerName, setPlayerName]   = useState(() => localStorage.getItem('playerName') ?? '');
   const [roomIdInput, setRoomIdInput] = useState('');
   const [error, setError]             = useState('');
   const [loading, setLoading]         = useState(false);
@@ -35,6 +35,7 @@ export function Lobby({ onJoin }: LobbyProps) {
     try {
       const res  = await fetch('/api/rooms', { method: 'POST' });
       const data = await res.json() as { roomId: string; hostPlayerId: string };
+      localStorage.setItem('playerName', name);
       onJoin(data.roomId, name, true, data.hostPlayerId, data.hostPlayerId);
     } catch {
       setError('Failed to create room');
@@ -53,6 +54,7 @@ export function Lobby({ onJoin }: LobbyProps) {
       const res  = await fetch(`/api/rooms/${rid}/join`, { method: 'POST' });
       if (!res.ok) { setError('Room not found'); setLoading(false); return; }
       const data = await res.json() as { playerId: string; hostPlayerId: string };
+      localStorage.setItem('playerName', name);
       onJoin(rid, name, false, data.playerId, data.hostPlayerId);
     } catch {
       setError('Failed to join room');
@@ -175,9 +177,10 @@ interface WaitingRoomProps {
   isHost: boolean;
   myPlayerId: string;
   onStart: () => void;
+  onGoHome?: () => void;
 }
 
-export function WaitingRoom({ roomId, players, isHost, myPlayerId, onStart }: WaitingRoomProps) {
+export function WaitingRoom({ roomId, players, isHost, myPlayerId, onStart, onGoHome }: WaitingRoomProps) {
   const canStart = players.length >= 4;
 
   // Preview team split: even → red, odd → blue
@@ -249,6 +252,15 @@ export function WaitingRoom({ roomId, players, isHost, myPlayerId, onStart }: Wa
           <div style={{ textAlign: 'center', color: MUTED, fontSize: 14 }}>
             Waiting for host to start…
           </div>
+        )}
+        {onGoHome && (
+          <button onClick={onGoHome} style={{
+            padding: '11px 0', borderRadius: 8,
+            border: `1px solid ${BORDER}`, background: 'transparent',
+            color: MUTED, fontSize: 14, cursor: 'pointer',
+          }}>
+            🏠 Back to Lobby
+          </button>
         )}
       </div>
     </div>

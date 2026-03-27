@@ -8,9 +8,10 @@ interface ScoreScreenProps {
   myPlayerId: string;
   isHost: boolean;
   onPlayAgain: () => void;
+  onGoHome?: () => void;
 }
 
-export function ScoreScreen({ publicState, privateState, myPlayerId, isHost, onPlayAgain }: ScoreScreenProps) {
+export function ScoreScreen({ publicState, privateState, myPlayerId, isHost, onPlayAgain, onGoHome }: ScoreScreenProps) {
   // Colony survived if morale > 0 when the game ended (either time ran out or morale held)
   const colonyWon = publicState.morale > 0;
   const colonyLost = !colonyWon;
@@ -97,6 +98,15 @@ export function ScoreScreen({ publicState, privateState, myPlayerId, isHost, onP
         )}
         {!isHost && (
           <p style={styles.waiting}>Waiting for host to start a new game...</p>
+        )}
+        {onGoHome && (
+          <button onClick={onGoHome} style={{
+            padding: '10px', borderRadius: 6,
+            border: '1px solid #0f3460', background: 'transparent',
+            color: '#888', fontSize: '0.9rem', cursor: 'pointer', marginTop: 4,
+          }}>
+            🏠 Back to Lobby
+          </button>
         )}
       </div>
     </div>

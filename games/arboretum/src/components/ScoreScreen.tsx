@@ -5,13 +5,14 @@ interface ScoreScreenProps {
   results: PlayerScoreResult[];
   players: PlayerState[];
   onPlayAgain?: () => void;
+  onGoHome?: () => void;
 }
 
 function getPlayerName(players: PlayerState[], playerId: string): string {
   return players.find(p => p.playerId === playerId)?.name ?? playerId;
 }
 
-export function ScoreScreen({ results, players, onPlayAgain }: ScoreScreenProps) {
+export function ScoreScreen({ results, players, onPlayAgain, onGoHome }: ScoreScreenProps) {
   const sorted = [...results].sort((a, b) => b.total - a.total);
   const winner = sorted[0];
 
@@ -139,6 +140,15 @@ export function ScoreScreen({ results, players, onPlayAgain }: ScoreScreenProps)
       {onPlayAgain && (
         <button className="primary" onClick={onPlayAgain} style={{ padding: '12px 32px', fontSize: 16 }}>
           Play Again
+        </button>
+      )}
+      {onGoHome && (
+        <button onClick={onGoHome} style={{
+          padding: '10px 32px', borderRadius: 6,
+          border: '1px solid var(--color-border)', background: 'transparent',
+          color: 'var(--color-text-muted)', fontSize: 14, cursor: 'pointer',
+        }}>
+          🏠 Back to Lobby
         </button>
       )}
     </div>

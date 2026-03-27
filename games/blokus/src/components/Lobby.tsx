@@ -64,11 +64,12 @@ interface WaitingRoomProps {
   isHost: boolean;
   myPlayerId: string;
   onStart: () => void;
+  onGoHome?: () => void;
 }
 
 const COLOR_LABELS = ['🟦 Blue', '🟨 Yellow', '🟥 Red', '🟩 Green'];
 
-export function WaitingRoom({ roomId, players, isHost, myPlayerId, onStart }: WaitingRoomProps) {
+export function WaitingRoom({ roomId, players, isHost, myPlayerId, onStart, onGoHome }: WaitingRoomProps) {
   const canStart = players.length >= 2 && players.length <= 4;
 
   return (
@@ -108,6 +109,11 @@ export function WaitingRoom({ roomId, players, isHost, myPlayerId, onStart }: Wa
           <p style={{ color: '#94A3B8', fontSize: '0.9rem', marginTop: 8, textAlign: 'center' }}>
             Waiting for host to start…
           </p>
+        )}
+        {onGoHome && (
+          <button onClick={onGoHome} style={{ ...s.btnSecondary, marginTop: 4, fontSize: '0.9rem' }}>
+            🏠 Back to Lobby
+          </button>
         )}
       </div>
     </div>
